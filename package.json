@@ -1,0 +1,18 @@
+{
+  "name": "ppe",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./public/asset/css/input.css -o ./public/asset/css/output.css --minify",
+    "watch:css": "tailwindcss -i ./public/asset/css/input.css -o ./public/asset/css/output.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.5",
+    "tailwindcss": "^4.3.5"
+  }
+}

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Fichiers scannés pour détecter les classes Tailwind */
+@source "../../../view";
+@source "../../../controller";
+@source "../../../index.php";
+
+/* Couleurs et police de la maquette Graille (thème sombre façon iOS) */
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+
+  --color-fond: #000000;
+  --color-surface-1: #121215;
+  --color-surface-2: #1c1c21;
+  --color-surface-3: #2a2a31;
+
+  --color-texte: #f5f5f7;
+  --color-texte-2: rgb(235 235 245 / 0.62);
+  --color-texte-3: rgb(235 235 245 / 0.34);
+
+  --color-accent: #ff6b3d;
+  --color-accent-2: #ff8f5e;
+  --color-succes: #32d74b;
+  --color-alerte: #ffd60a;
+  --color-danger: #ff453a;
+}
+
+@layer base {
+  body {
+    @apply bg-fond text-texte font-sans antialiased;
+  }
+}
