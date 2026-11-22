@@ -58,10 +58,19 @@ function creerCarte() {
 }
 
 function cartePrete() {
+    var bloc = document.createElement('div');
+    bloc.className = 'nous';
+
+    var point = document.createElement('div');
+    point.className = 'point';
+
     var pastille = document.createElement('div');
     pastille.className = 'campus';
     pastille.textContent = campus.nom;
-    new maplibregl.Marker({ element: pastille, anchor: 'center' }).setLngLat([campus.lng, campus.lat]).addTo(carte);
+
+    bloc.appendChild(point);
+    bloc.appendChild(pastille);
+    new maplibregl.Marker({ element: bloc, anchor: 'center' }).setLngLat([campus.lng, campus.lat]).addTo(carte);
 
     var i;
     for (i = 0; i < lieux.length; i++) {

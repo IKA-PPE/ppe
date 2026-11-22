@@ -187,8 +187,12 @@ body:has(.ex) {
     overflow: hidden;
 }
 
-#carte {
-    z-index: 1;
+#carte .maplibregl-canvas-container {
+    z-index: 0;
+}
+
+#carte .maplibregl-ctrl-top-right {
+    z-index: 30;
 }
 
 .bulle {
@@ -229,7 +233,7 @@ body:has(.ex) {
     top: 16px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 6;
+    z-index: 20;
     width: 320px;
     padding: 14px;
     border-radius: 18px;
@@ -272,7 +276,7 @@ body:has(.ex) {
     position: absolute;
     left: 50%;
     bottom: 18px;
-    z-index: 5;
+    z-index: 20;
     transform: translateX(-50%);
     display: flex;
     gap: 8px;
@@ -304,6 +308,34 @@ body:has(.ex) {
     align-items: center;
 }
 
+.nous {
+    width: 22px;
+    height: 22px;
+}
+
+.point {
+    width: 14px;
+    height: 14px;
+    margin: 1px auto 0;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #2563eb;
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.28);
+    position: relative;
+}
+
+.point:after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: #2563eb;
+}
+
 .campus {
     max-width: 170px;
     overflow: hidden;
@@ -312,15 +344,32 @@ body:has(.ex) {
     background: #2563eb;
     color: #fff;
     font: 700 12px sans-serif;
-    padding: 4px 8px;
-    border-radius: 8px;
+    padding: 5px 10px;
+    border-radius: 999px;
+}
+
+.nous .campus {
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.campus:before {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+    vertical-align: -2px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M3 21V9l9-7 9 7v12h-6v-7H9v7H3z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .ici {
     position: absolute;
     top: 79px;
     right: 10px;
-    z-index: 5;
+    z-index: 20;
     width: 29px;
     height: 29px;
     border: 0;

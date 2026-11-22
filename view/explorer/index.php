@@ -1,5 +1,5 @@
 <?php include('controller/explorerController.php'); ?>
-<link rel="stylesheet" href="public/asset/css/explorer.css?v=5">
+<link rel="stylesheet" href="public/asset/css/explorer.css?v=7">
 <div class="ex">
     <section class="liste">
         <h1>Autour de moi</h1>
@@ -120,4 +120,4 @@
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <?php } ?>
-<script src="public/asset/js/explorer.js?v=5"></script>
+<script src="public/asset/js/explorer.js?v=7"></script>
