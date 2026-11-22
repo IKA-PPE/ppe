@@ -27,10 +27,7 @@ include __DIR__ . '/view/layout/header.php';
             include __DIR__ . '/view/dashboard/index.php';
             break;
         case 'explorer':
-            require_once __DIR__ . '/private/bdd.php';
-            require_once __DIR__ . '/controller/explorerController.php';
-            $explorerController = new explorerController($bdd);
-            $explorerController->afficher();
+            include __DIR__ . '/view/explorer/index.php';
             break;
         case 'roulette':
             include __DIR__ . '/view/roulette/index.php';

@@ -1,5 +1,5 @@
-// Carte de la page Explorer.
-// Les données (campus et restos) sont dans la balise #donnees-explorer.
+// Ce fichier dessine seulement la carte.
+// La liste des restos est déjà affichée par la vue PHP.
 
 var carte = null;
 var campus = null;
@@ -9,6 +9,7 @@ var pastilles = {};
 
 demarrer();
 
+// On lit les restos, puis on lance la carte.
 function demarrer() {
     var bouton = document.getElementById('plusf');
     if (bouton) {
@@ -23,17 +24,22 @@ function demarrer() {
     var donnees = JSON.parse(bloc.textContent);
     campus = donnees.campus;
     lieux = donnees.lieux;
+    var i;
+    for (i = 0; i < donnees.liste.length; i++) {
+        parId[donnees.liste[i].id] = donnees.liste[i];
+    }
     creerCarte();
 }
 
-// Affiche ou cache Burger, Poulet, Pizza…
+// Montre ou cache Burger, Poulet, Pizza...
 function plusDeFiltres() {
     var bloc = document.getElementById('suite');
-    bloc.classList.toggle('on');
     if (bloc.classList.contains('on')) {
-        this.textContent = 'Moins de filtres';
-    } else {
+        bloc.classList.remove('on');
         this.textContent = 'Plus de filtres';
+    } else {
+        bloc.classList.add('on');
+        this.textContent = 'Moins de filtres';
     }
 }
 
@@ -47,16 +53,15 @@ function creerCarte() {
     carte.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     carte.dragRotate.disable();
     carte.on('load', cartePrete);
-    carte.on('moveend', espacer);
     document.getElementById('ici').onclick = recentrer;
-    document.querySelector('.liste').addEventListener('click', clicListe);
+    document.querySelector('.liste').onclick = clicListe;
 }
 
 function cartePrete() {
     var pastille = document.createElement('div');
     pastille.className = 'campus';
     pastille.textContent = campus.nom;
-    new maplibregl.Marker({ element: pastille }).setLngLat([campus.lng, campus.lat]).addTo(carte);
+    new maplibregl.Marker({ element: pastille, anchor: 'center' }).setLngLat([campus.lng, campus.lat]).addTo(carte);
 
     var i;
     for (i = 0; i < lieux.length; i++) {
@@ -64,14 +69,18 @@ function cartePrete() {
         poserPrix(lieux[i]);
     }
 
-    if (lieux.length === 1) {
+    carte.on('moveend', espacer);
+    carte.resize();
+    carte.jumpTo({ center: [campus.lng, campus.lat], zoom: 14.4 });
+
+    if (lieux.length == 1) {
         ouvrirFiche(lieux[0]);
     } else {
         espacer();
     }
 }
 
-// Un bouton avec le prix, posé sur la carte.
+// Pose le prix du resto sur la carte.
 function poserPrix(resto) {
     var bouton = document.createElement('button');
     bouton.type = 'button';
@@ -80,12 +89,13 @@ function poserPrix(resto) {
     bouton.onclick = function () {
         ouvrirFiche(resto);
     };
+
     pastilles[resto.id] = new maplibregl.Marker({ element: bouton, anchor: 'bottom' })
         .setLngLat([resto.lng, resto.lat])
         .addTo(carte);
 }
 
-// Ouvre la fiche et colore le prix en orange.
+// Ouvre la fiche du resto cliqué.
 function ouvrirFiche(resto) {
     if (!resto) {
         return;
@@ -100,13 +110,20 @@ function ouvrirFiche(resto) {
     if (!pastilles[resto.id]) {
         poserPrix(resto);
     }
-    var el = pastilles[resto.id].getElement();
-    el.classList.add('on');
-    if (el.parentElement) {
-        el.parentElement.style.zIndex = '8';
+
+    var prix = pastilles[resto.id].getElement();
+    prix.classList.add('on');
+    if (prix.parentElement) {
+        prix.parentElement.style.zIndex = '8';
     }
+
     espacer();
-    carte.easeTo({ center: [resto.lng, resto.lat], zoom: Math.max(carte.getZoom(), 15.4) });
+
+    var zoom = carte.getZoom();
+    if (zoom < 15.4) {
+        zoom = 15.4;
+    }
+    carte.easeTo({ center: [resto.lng, resto.lat], zoom: zoom });
 
     var lignes = document.querySelectorAll('.item');
     for (i = 0; i < lignes.length; i++) {
@@ -119,51 +136,78 @@ function ouvrirFiche(resto) {
     }
 
     document.getElementById('fiche').style.display = 'block';
+
     var avatar = document.getElementById('fiche-av');
     avatar.textContent = resto.sigle;
     avatar.style.background = resto.fond;
     avatar.style.color = resto.encre;
+
     document.getElementById('fiche-nom').textContent = resto.nom;
-    document.getElementById('fiche-min').textContent = resto.min + ' min à pied' + (resto.connu ? ' · Ouvert' : '');
-    document.getElementById('fiche-rue').textContent = resto.euro + (resto.badges ? ' · ' + resto.badges : '') + ' · ' + resto.rue;
+
+    var texteMin = resto.min + ' min à pied';
+    if (resto.connu && resto.ouvert) {
+        texteMin = texteMin + ' · Ouvert';
+    }
+    document.getElementById('fiche-min').textContent = texteMin;
+
+    var texteRue = resto.euro;
+    if (resto.badges) {
+        texteRue = texteRue + ' · ' + resto.badges;
+    }
+    texteRue = texteRue + ' · ' + resto.rue;
+    document.getElementById('fiche-rue').textContent = texteRue;
 
     var adresse = encodeURIComponent(resto.nom + ' ' + resto.rue + ' ' + campus.ville);
     document.getElementById('fiche-voir').href = 'https://www.google.com/maps/search/?api=1&query=' + adresse;
     document.getElementById('fiche-aller').href = 'https://www.google.com/maps/dir/?api=1&destination=' + adresse;
 }
 
-// Cache les prix qui se chevauchent. Le prix sélectionné reste visible.
+// Cache les prix qui se touchent. Le prix orange reste visible.
 function espacer() {
-    var pris = [carte.project([campus.lng, campus.lat])];
+    var gardes = [];
+    gardes.push(carte.project([campus.lng, campus.lat]));
+
     var i;
     for (i = 0; i < lieux.length; i++) {
-        var el = pastilles[lieux[i].id].getElement();
-        if (!el.classList.contains('on')) {
+        if (!pastilles[lieux[i].id]) {
             continue;
         }
-        el.style.visibility = 'visible';
-        pris.push(carte.project([lieux[i].lng, lieux[i].lat]));
+        var elu = pastilles[lieux[i].id].getElement();
+        if (elu.classList.contains('on')) {
+            elu.style.visibility = 'visible';
+            gardes.push(carte.project([lieux[i].lng, lieux[i].lat]));
+        }
     }
+
     for (i = 0; i < lieux.length; i++) {
+        if (!pastilles[lieux[i].id]) {
+            continue;
+        }
         var bouton = pastilles[lieux[i].id].getElement();
         if (bouton.classList.contains('on')) {
             continue;
         }
+
         var point = carte.project([lieux[i].lng, lieux[i].lat]);
         var tropPres = false;
         var j;
-        for (j = 0; j < pris.length; j++) {
-            var dx = point.x - pris[j].x;
-            var dy = point.y - pris[j].y;
-            if (dx * dx + dy * dy < 6200) {
+        for (j = 0; j < gardes.length; j++) {
+            var dx = point.x - gardes[j].x;
+            var dy = point.y - gardes[j].y;
+            var minimum = 80 * 80;
+            if (j == 0) {
+                minimum = 160 * 160;
+            }
+            if ((dx * dx) + (dy * dy) < minimum) {
                 tropPres = true;
             }
         }
+
         if (tropPres) {
             bouton.style.visibility = 'hidden';
         } else {
             bouton.style.visibility = 'visible';
-            pris.push(point);
+            gardes.push(point);
         }
     }
 }
@@ -172,12 +216,16 @@ function recentrer() {
     carte.easeTo({ center: [campus.lng, campus.lat], zoom: 14.4 });
 }
 
-// Un clic sur une ligne de la liste ouvre la fiche, sans changer de page.
-function clicListe(e) {
-    var lien = e.target.closest('.ouvrir');
-    if (!lien) {
-        return;
+// Un clic sur une ligne ouvre la fiche, sans changer de page.
+function clicListe(evenement) {
+    var element = evenement.target;
+    while (element) {
+        if (element.classList && element.classList.contains('ouvrir')) {
+            evenement.preventDefault();
+            var id = element.getAttribute('data-id');
+            ouvrirFiche(parId[id]);
+            return;
+        }
+        element = element.parentElement;
     }
-    e.preventDefault();
-    ouvrirFiche(parId[lien.getAttribute('data-id')]);
 }

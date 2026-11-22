@@ -1,6 +1,4 @@
 <?php
-
-
 class ExplorerModel
 {
     private $bdd;
@@ -9,160 +7,193 @@ class ExplorerModel
     {
         $this->bdd = $bdd;
     }
-
-    
+    // Etablissement choisi a l'inscription.
     public function campusDe($idUtilisateur)
     {
-        $req = $this->bdd->prepare("SELECT e.id_etablissement AS id, e.nom, e.ville, e.latitude AS lat, e.longitude AS lng FROM utilisateur u JOIN etablissement e ON e.id_etablissement = u.id_etablissement WHERE u.id_utilisateur = ?");
-        $req->execute([$idUtilisateur]);
+        $sql = "SELECT e.id_etablissement AS id, e.nom, e.ville, e.latitude AS lat, e.longitude AS lng FROM utilisateur u JOIN etablissement e ON e.id_etablissement = u.id_etablissement WHERE u.id_utilisateur = :id";
+        $req = $this->bdd->prepare($sql);
+        $req->bindParam(':id', $idUtilisateur);
+        $req->execute();
         $campus = $req->fetch();
-
-        if (!$campus || $campus['lat'] === null || $campus['lng'] === null) {
+        if ($campus == false || $campus['lat'] === null || $campus['lng'] === null) {
             return null;
         }
-
-        return [
-            'id' => (int) $campus['id'],
-            'nom' => $campus['nom'],
-            'ville' => $campus['ville'],
-            'lat' => (float) $campus['lat'],
-            'lng' => (float) $campus['lng'],
-        ];
+        $campus['id'] = (int) $campus['id'];
+        $campus['lat'] = (float) $campus['lat'];
+        $campus['lng'] = (float) $campus['lng'];
+        return $campus;
     }
-
-    // Restaurants nommés dans un rayon de 1 200 m (environ 15 min à pied).
-    public function autour($lat, $lng)
+    // Restos dans un rayon de 1200 m, du plus proche au plus loin.
+    public function autour($latitude, $longitude)
     {
-        $q = '[out:json][timeout:40];(node["amenity"~"^(restaurant|fast_food)$"]["name"](around:1200,' . $lat . ',' . $lng . ');way["amenity"~"^(restaurant|fast_food)$"]["name"](around:1200,' . $lat . ',' . $lng . '););out center tags;';
-        $ch = curl_init('https://overpass.openstreetmap.fr/api/interpreter');
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => 'data=' . urlencode($q),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 40,
-            CURLOPT_USERAGENT => 'GraillePPE/1.0',
-        ]);
-        $json = json_decode((string) curl_exec($ch), true);
-        curl_close($ch);
-
-        $liste = [];
-        $deja = [];
-        foreach ($json['elements'] ?? [] as $el) {
-            $nom = $el['tags']['name'] ?? '';
-            $plat = $el['lat'] ?? ($el['center']['lat'] ?? null);
-            $plng = $el['lon'] ?? ($el['center']['lon'] ?? null);
-            if ($nom === '' || $plat === null || isset($deja[$k = mb_strtolower($nom) . round($plat, 4)])) {
-                continue;
-            }
-            $deja[$k] = true;
-            $rue = trim(($el['tags']['addr:housenumber'] ?? '') . ' ' . ($el['tags']['addr:street'] ?? ''));
-            $liste[] = [
-                'id' => ($el['type'][0] ?? 'n') . $el['id'],
-                'nom' => $nom,
-                'rue' => $rue,
-                'lat' => $plat,
-                'lng' => $plng,
-                'min' => $this->kmMin($plat, $plng, $lat, $lng),
-                'amenity' => $el['tags']['amenity'] ?? '',
-                'cuisine' => $el['tags']['cuisine'] ?? '',
-                'horaire' => $el['tags']['opening_hours'] ?? '',
-                'diet_halal' => $el['tags']['diet:halal'] ?? '',
-                'diet_vegan' => $el['tags']['diet:vegan'] ?? '',
-            ];
+        $zone = 'around:1200,' . $latitude . ',' . $longitude;
+        $question = '[out:json][timeout:40];(node["amenity"~"^(restaurant|fast_food)$"]["name"](' . $zone . ');way["amenity"~"^(restaurant|fast_food)$"]["name"](' . $zone . '););out center tags;';
+        $curl = curl_init('https://overpass.openstreetmap.fr/api/interpreter');
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, 'data=' . urlencode($question));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 40);
+        curl_setopt($curl, CURLOPT_USERAGENT, 'GraillePPE/1.0');
+        $texte = curl_exec($curl);
+        curl_close($curl);
+        $json = json_decode($texte, true);
+        if (is_array($json) == false || isset($json['elements']) == false) {
+            return array();
         }
-        usort($liste, function ($a, $b) { return $a['min'] <=> $b['min']; });
+        $liste = array();
+        $dejaVu = array();
+        foreach ($json['elements'] as $element) {
+            $tags = array();
+            if (isset($element['tags'])) { $tags = $element['tags']; }
+            $nom = $this->lire($tags, 'name');
+            $lat = null;
+            $lng = null;
+            if (isset($element['lat'])) { $lat = $element['lat']; $lng = $element['lon']; }
+            if (isset($element['center']['lat'])) { $lat = $element['center']['lat']; $lng = $element['center']['lon']; }
+            if ($nom == '' || $lat === null || isset($dejaVu[mb_strtolower($nom) . round($lat, 4)])) { continue; }
+            $dejaVu[mb_strtolower($nom) . round($lat, 4)] = true;
+            $lettre = 'n';
+            if (isset($element['type']) && $element['type'] != '') { $lettre = substr($element['type'], 0, 1); }
+            $liste[] = array(
+                'id' => $lettre . $element['id'], 'nom' => $nom,
+                'rue' => trim($this->lire($tags, 'addr:housenumber') . ' ' . $this->lire($tags, 'addr:street')),
+                'lat' => $lat, 'lng' => $lng, 'min' => $this->minutes($lat, $lng, $latitude, $longitude),
+                'amenity' => $this->lire($tags, 'amenity'), 'cuisine' => $this->lire($tags, 'cuisine'),
+                'horaire' => $this->lire($tags, 'opening_hours'),
+                'diet_halal' => $this->lire($tags, 'diet:halal'), 'diet_vegan' => $this->lire($tags, 'diet:vegan'),
+            );
+        }
+        usort($liste, function ($a, $b) { return $a['min'] - $b['min']; });
         return $liste;
     }
-
-    // Complète un restaurant : filtres, prix indicatif, pastille de 3 lettres.
-    public function infos($r)
+    // 8 euros pour un fast-food, 14 euros sinon.
+    public function infos($resto)
     {
-        $n = $this->txt($r['nom'] . ' ' . $r['cuisine']);
-        $r['halal'] = in_array($r['diet_halal'], ['yes', 'only'], true) || preg_match('/halal|kebab|taco|couscous|liban|turc|indien|indian|maroc/', $n);
-        $r['vege'] = in_array($r['diet_vegan'], ['yes', 'only'], true) || preg_match('/salade|salad|vegan|veget/', $n);
-        $r['petit'] = $r['amenity'] === 'fast_food' || (bool) preg_match('/kebab|taco|snack|sandwich|crepe/', $this->txt($r['nom']));
-        $r['prix'] = $r['petit'];
-        $r['ouvert'] = $this->ouvert($r['horaire']);
-        $r['connu'] = trim((string) $r['horaire']) !== '';
-        $r['pres'] = $r['min'] <= 5;
-        $r['burger'] = (bool) preg_match('/burger/', $n);
-        $r['poulet'] = (bool) preg_match('/chicken|poulet|fried|kfc/', $n);
-        $r['pizza'] = (bool) preg_match('/pizza/', $n);
-        $r['sushi'] = (bool) preg_match('/sushi|japon/', $n);
-        $r['tacos'] = (bool) preg_match('/taco/', $n);
-        $r['sigle'] = mb_strtoupper(mb_substr(trim($r['nom']), 0, 3));
-        $couleurs = ['#ff6b3d', '#e11d48', '#e7c4a0', '#f97316', '#fb7185'];
-        $r['fond'] = $couleurs[strlen($r['nom']) % 5];
-        $r['encre'] = $r['fond'] === '#e7c4a0' ? '#3f2a1d' : '#fff';
-        // OpenStreetMap ne donne pas le prix du menu.
-        $r['euro'] = $r['petit'] ? '8 €' : '14 €';
-        return $r;
+        $texte = $this->simple($resto['nom'] . ' ' . $resto['cuisine']);
+        $nom = $this->simple($resto['nom']);
+        $resto['halal'] = ($resto['diet_halal'] == 'yes' || $resto['diet_halal'] == 'only' || $this->contient($texte, array('halal', 'kebab', 'taco', 'couscous', 'liban', 'turc', 'indien', 'indian', 'maroc')));
+        $resto['vege'] = ($resto['diet_vegan'] == 'yes' || $resto['diet_vegan'] == 'only' || $this->contient($texte, array('salade', 'salad', 'vegan', 'veget')));
+        $resto['petit'] = ($resto['amenity'] == 'fast_food' || $this->contient($nom, array('kebab', 'taco', 'snack', 'sandwich', 'crepe')));
+        $resto['prix'] = $resto['petit'];
+        $resto['ouvert'] = $this->ouvert($resto['horaire']);
+        $resto['connu'] = (trim($resto['horaire']) != '');
+        $resto['pres'] = ($resto['min'] <= 5);
+        $resto['burger'] = $this->contient($texte, array('burger'));
+        $resto['poulet'] = $this->contient($texte, array('chicken', 'poulet', 'kfc'));
+        $resto['pizza'] = $this->contient($texte, array('pizza'));
+        $resto['sushi'] = $this->contient($texte, array('sushi', 'japon'));
+        $resto['tacos'] = $this->contient($texte, array('taco'));
+        $resto['sigle'] = mb_strtoupper(mb_substr(trim($resto['nom']), 0, 3));
+        $couleurs = array('#ff6b3d', '#e11d48', '#e7c4a0', '#f97316', '#fb7185');
+        $resto['fond'] = $couleurs[strlen($resto['nom']) % 5];
+        $resto['encre'] = '#fff';
+        if ($resto['fond'] == '#e7c4a0') { $resto['encre'] = '#3f2a1d'; }
+        $resto['euro'] = '14 €';
+        if ($resto['petit']) { $resto['euro'] = '8 €'; }
+        $badges = array();
+        if ($resto['halal']) { $badges[] = 'Halal'; }
+        if ($resto['petit']) { $badges[] = '≤ 10 €'; }
+        if ($resto['vege']) { $badges[] = 'Végé'; }
+        $resto['badges'] = implode(' · ', $badges);
+        return $resto;
     }
-
-    public function passe($r, $f)
+    // true si le resto correspond a la recherche et aux filtres.
+    public function garde($resto, $recherche, $filtres)
     {
-        foreach ($f as $k => $on) {
-            if ($on && empty($r[$k])) {
-                return false;
+        foreach ($filtres as $cle => $actif) {
+            if ($actif == true && $resto[$cle] == false) { return false; }
+        }
+        $mot = $this->simple($recherche);
+        if ($mot == '') { return true; }
+        if (str_contains($this->simple($resto['nom']), $mot)) { return true; }
+        if (str_contains($this->simple($resto['rue']), $mot)) { return true; }
+        if (str_contains($this->simple($resto['cuisine']), $mot)) { return true; }
+        return false;
+    }
+    // Garde les restos a moins de 15 min.
+    public function filtrer($tous, $recherche, $filtres, $idsRoulette)
+    {
+        $ok = array();
+        $roulette = array();
+        foreach ($tous as $resto) {
+            $resto = $this->infos($resto);
+            $resto['dans'] = in_array($resto['id'], $idsRoulette);
+            if ($resto['dans']) { $roulette[] = $resto; }
+            if ($resto['min'] > 15) { continue; }
+            if ($this->garde($resto, $recherche, $filtres) == false) { continue; }
+            $ok[] = $resto;
+        }
+        $limite = 20;
+        if ($recherche != '') { $limite = 40; }
+        foreach ($filtres as $actif) {
+            if ($actif) { $limite = 40; }
+        }
+        $liste = array_slice($ok, 0, $limite);
+        return array('liste' => $liste, 'lieux' => $ok, 'roulette' => $roulette);
+    }
+    private function lire($tags, $cle)
+    {
+        if (isset($tags[$cle])) { return $tags[$cle]; }
+        return '';
+    }
+    private function contient($texte, $mots)
+    {
+        foreach ($mots as $mot) {
+            if (str_contains($texte, $mot)) { return true; }
+        }
+        return false;
+    }
+    // "O'Tacos" devient "otacos".
+    private function simple($valeur)
+    {
+        $valeur = mb_strtolower((string) $valeur);
+        $avec = array('à', 'â', 'ä', 'é', 'è', 'ê', 'ë', 'î', 'ï', 'ô', 'ù', 'û', 'ü', 'ç');
+        $sans = array('a', 'a', 'a', 'e', 'e', 'e', 'e', 'i', 'i', 'o', 'u', 'u', 'u', 'c');
+        $valeur = str_replace($avec, $sans, $valeur);
+        $valeur = str_replace(array("'", '’', '-', ' ', '!', '&'), '', $valeur);
+        return $valeur;
+    }
+    // 80 metres a pied = 1 minute.
+    private function minutes($latResto, $lngResto, $latCampus, $lngCampus)
+    {
+        $nord = ($latResto - $latCampus) * 111320;
+        $est = ($lngResto - $lngCampus) * 111320 * cos(deg2rad($latCampus));
+        $minutes = (int) round(sqrt(($nord * $nord) + ($est * $est)) / 80);
+        if ($minutes < 1) { return 1; }
+        return $minutes;
+    }
+    // Mo lundi, Tu mardi, We mercredi, Th jeudi, Fr vendredi, Sa samedi, Su dimanche.
+    private function ouvert($horaire)
+    {
+        $horaire = trim((string) $horaire);
+        if ($horaire == '' || str_contains($horaire, '24/7')) { return true; }
+        $jours = array('Mo' => 1, 'Tu' => 2, 'We' => 3, 'Th' => 4, 'Fr' => 5, 'Sa' => 6, 'Su' => 7);
+        $aujourdHui = (int) date('N');
+        $maintenant = (int) date('G') * 60 + (int) date('i');
+        $ferme = false;
+        foreach (explode(';', $horaire) as $ligne) {
+            $compact = str_replace(' ', '', trim($ligne));
+            $code = substr($compact, 0, 2);
+            if (isset($jours[$code])) {
+                $debut = $jours[$code];
+                $fin = $debut;
+                if (substr($compact, 2, 1) == '-' && isset($jours[substr($compact, 3, 2)])) { $fin = $jours[substr($compact, 3, 2)]; }
+                $bonJour = ($debut <= $fin && $aujourdHui >= $debut && $aujourdHui <= $fin) || ($debut > $fin && ($aujourdHui >= $debut || $aujourdHui <= $fin));
+                if ($bonJour == false) { continue; }
             }
-        }
-        return true;
-    }
-
-    // "otacos" trouve "O'Tacos" : on enlève accents, apostrophes et espaces.
-    public function correspond($r, $q)
-    {
-        $mot = $this->txt($q);
-        if ($mot === '') {
-            return true;
-        }
-        return str_contains($this->txt($r['nom']), $mot)
-            || str_contains($this->txt($r['rue']), $mot)
-            || str_contains($this->txt($r['cuisine']), $mot);
-    }
-
-    public function txt($v)
-    {
-        $v = strtr(mb_strtolower((string) $v), ['à'=>'a','â'=>'a','ä'=>'a','é'=>'e','è'=>'e','ê'=>'e','ë'=>'e','î'=>'i','ï'=>'i','ô'=>'o','ù'=>'u','û'=>'u','ü'=>'u','ç'=>'c']);
-        return str_replace(["'", '’', '-', ' ', '!', '&'], '', $v);
-    }
-
-    public function kmMin($lat, $lng, $a, $b)
-    {
-        return max(1, (int) round(hypot(($lat - $a) * 111320, ($lng - $b) * 111320 * cos(deg2rad($a))) / 80));
-    }
-
-    // Horaire OpenStreetMap, par exemple "Mo-Fr 11:00-22:00". Sans horaire, on laisse le resto.
-    private function ouvert($h)
-    {
-        $h = trim((string) $h);
-        if ($h === '' || str_contains($h, '24/7')) {
-            return true;
-        }
-        $o = ['Mo'=>1,'Tu'=>2,'We'=>3,'Th'=>4,'Fr'=>5,'Sa'=>6,'Su'=>7];
-        $auj = $o[['Su','Mo','Tu','We','Th','Fr','Sa'][(int) date('w')]];
-        $now = (int) date('G') * 60 + (int) date('i');
-        $ok = null;
-        foreach (explode(';', $h) as $regle) {
-            if (preg_match('/(Mo|Tu|We|Th|Fr|Sa|Su)(?:\s*-\s*(Mo|Tu|We|Th|Fr|Sa|Su))?/', $regle, $m)) {
-                $a = $o[$m[1]];
-                $b = !empty($m[2]) ? $o[$m[2]] : $a;
-                $dansLaSemaine = ($a <= $b && $auj >= $a && $auj <= $b) || ($a > $b && ($auj >= $a || $auj <= $b));
-                if (!$dansLaSemaine) {
-                    continue;
+            if (str_contains(' ' . strtolower($ligne) . ' ', ' off ') && isset($jours[$code])) { $ferme = true; continue; }
+            preg_match_all('/(\d{1,2}):(\d{2})/', $ligne, $trouve);
+            if (count($trouve[1]) < 2) { continue; }
+            $dedans = false;
+            for ($i = 0; $i + 1 < count($trouve[1]); $i = $i + 2) {
+                $a = ($trouve[1][$i] * 60) + $trouve[2][$i];
+                $b = ($trouve[1][$i + 1] * 60) + $trouve[2][$i + 1];
+                if (($b > $a && $maintenant >= $a && $maintenant < $b) || ($b <= $a && ($maintenant >= $a || $maintenant < $b))) {
+                    $dedans = true;
                 }
             }
-            if (preg_match('/\boff\b/i', $regle)) {
-                $ok = false;
-                continue;
-            }
-            if (!preg_match('/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/', $regle, $x)) {
-                continue;
-            }
-            $d = $x[1] * 60 + $x[2];
-            $fin = $x[3] * 60 + $x[4];
-            $ok = $fin > $d ? ($now >= $d && $now < $fin) : ($now >= $d || $now < $fin);
+            $ferme = ($dedans == false);
         }
-        return $ok === null ? true : $ok;
+        return ($ferme == false);
     }
 }

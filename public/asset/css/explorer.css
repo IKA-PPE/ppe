@@ -1,9 +1,38 @@
 /* Page Explorer : liste à gauche, carte à droite. */
 
+body:has(.ex) {
+    overflow: hidden;
+}
+
 .ex {
     display: flex;
     height: 100vh;
-    margin: -40px -32px 0;
+    margin: -40px -32px -40px;
+    overflow: hidden;
+    background: #000;
+}
+
+.liste h1 {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.sous,
+.message {
+    margin-top: 4px;
+    color: #a1a1aa;
+    font-size: 14px;
+}
+
+.message {
+    margin-top: 16px;
+}
+
+.item b {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .liste {
@@ -96,6 +125,11 @@
     min-width: 0;
 }
 
+.item a > span:last-child {
+    min-width: 0;
+    flex: 1;
+}
+
 .av {
     width: 46px;
     height: 46px;
@@ -139,11 +173,18 @@
 .zone {
     position: relative;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    margin: 14px 14px 14px 10px;
+    border-radius: 18px;
 }
 
-#carte {
+#carte,
+.maplibregl-map,
+.maplibregl-canvas-container {
     position: absolute;
     inset: 0;
+    overflow: hidden;
 }
 
 .bulle {
@@ -258,6 +299,10 @@
 }
 
 .campus {
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     background: #2563eb;
     color: #fff;
     font: 700 12px sans-serif;

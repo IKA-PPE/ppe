@@ -1,205 +1,178 @@
 <?php
+include(__DIR__ . '/../model/ExplorerModel.php');
+include(__DIR__ . '/../private/bdd.php');
 
-require_once __DIR__ . '/../model/ExplorerModel.php';
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
+if (!isset($_SESSION['roulette']) || !is_array($_SESSION['roulette'])) {
+    $_SESSION['roulette'] = array();
+}
 
-class explorerController
-{
-    private $restaurants;
+// 1. Bouton + : le formulaire envoie action = ajouter.
+if (isset($_POST['action']) && $_POST['action'] == 'ajouter') {
 
-    public function __construct($bdd)
-    {
-        $this->restaurants = new ExplorerModel($bdd);
-    }
-
-    
-    public function afficher()
-    {
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: index.php?page=connexion');
-            exit;
-        }
-        if (!isset($_SESSION['roulette']) || !is_array($_SESSION['roulette'])) {
-            $_SESSION['roulette'] = [];
-        }
-
-        [$q, $f, $noms] = $this->demande($_GET);
-        $campus = $this->restaurants->campusDe($_SESSION['user_id']);
-        $message = '';
-
-        if (!$campus) {
-            $liste = [];
-            $lieux = [];
-            $roulette = [];
-            $nb = 0;
-            $mot = $q;
-            $suite = false;
-            $message = "On ne trouve pas l'adresse de ton établissement. Vérifie le nom saisi à l'inscription.";
-            $liens = [];
-            foreach ($noms as $k => $lab) {
-                $liens[$k] = $this->lien($q, $f, $k);
-            }
-            $lien = $this->lien($q, $f);
-            include __DIR__ . '/../view/explorer/index.php';
-            return;
-        }
-
-        $cle = 'pres_' . $campus['id'];
-        if (empty($_SESSION[$cle]) || !is_array($_SESSION[$cle])) {
-            $charges = $this->restaurants->autour($campus['lat'], $campus['lng']);
-            if (count($charges) > 10) {
-                $_SESSION[$cle] = $charges;
-            }
-        }
-        if (empty($_SESSION[$cle])) {
-            $_SESSION[$cle] = [];
-        }
-
-        $filtre = $q !== '';
-        foreach ($f as $on) {
-            if ($on) {
-                $filtre = true;
-            }
-        }
-
-        $restos = [];
-        foreach ($_SESSION[$cle] as $r) {
-            if ($r['min'] > 15) {
-                continue;
-            }
-            $r = $this->restaurants->infos($r);
-            if (!$this->restaurants->passe($r, $f) || !$this->restaurants->correspond($r, $q)) {
-                continue;
-            }
-            $r['dans'] = in_array($r['id'], $_SESSION['roulette'], true);
-            $restos[] = $r;
-        }
-
-        $liste = array_slice($restos, 0, $filtre ? 40 : 20);
-        $roulette = [];
-        foreach ($_SESSION[$cle] as $r) {
-            if (in_array($r['id'], $_SESSION['roulette'], true)) {
-                $roulette[] = $this->restaurants->infos($r);
-            }
-        }
-
-        // Quelques restos espacés pour la carte, pour ne pas empiler toutes les pastilles.
-        $choix = $liste;
-        foreach ($restos as $r) {
-            $loin = true;
-            foreach ($choix as $d) {
-                if (hypot(($r['lat'] - $d['lat']) * 111320, ($r['lng'] - $d['lng']) * 73000) < 220) {
-                    $loin = false;
-                }
-            }
-            if ($loin) {
-                $choix[] = $r;
-            }
-            if (count($choix) >= 36) {
-                break;
-            }
-        }
-
-        $lieux = [];
-        foreach ($choix as $r) {
-            $lieux[] = [
-                'id' => $r['id'], 'nom' => $r['nom'], 'rue' => $r['rue'], 'min' => (int) $r['min'],
-                'lat' => (float) $r['lat'], 'lng' => (float) $r['lng'], 'sigle' => $r['sigle'],
-                'fond' => $r['fond'], 'encre' => $r['encre'], 'euro' => $r['euro'],
-                'connu' => $r['connu'] && $r['ouvert'],
-                'badges' => trim(($r['halal'] ? 'Halal · ' : '') . ($r['petit'] ? '≤ 10 € · ' : '') . ($r['vege'] ? 'Végé' : ''), ' ·'),
-            ];
-        }
-
-        $liens = [];
-        foreach ($noms as $k => $lab) {
-            $liens[$k] = $this->lien($q, $f, $k);
-        }
-        $lien = $this->lien($q, $f);
-        $nb = count($liste);
-        $mot = $q;
-        $suite = $f['pres'] || $f['burger'] || $f['poulet'] || $f['pizza'] || $f['sushi'] || $f['tacos'];
-
-        include __DIR__ . '/../view/explorer/index.php';
-    }
-
-    // Le bouton + poste ici, comme le login poste vers utilisateurController.
-    public function roulette()
-    {
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: ../index.php?page=connexion');
-            exit;
-        }
-        if (!isset($_SESSION['roulette']) || !is_array($_SESSION['roulette'])) {
-            $_SESSION['roulette'] = [];
-        }
-
-        [$q, $f] = $this->demande($_POST);
-        $id = (string) ($_POST['id'] ?? '');
-        $garde = [];
-        $dedans = false;
-        foreach ($_SESSION['roulette'] as $deja) {
-            if ($deja === $id) {
-                $dedans = true;
-            } else {
-                $garde[] = $deja;
-            }
-        }
-        if (!$dedans && $id !== '') {
-            $garde[] = $id;
-        }
-        $_SESSION['roulette'] = $garde;
-
-        header('Location: ' . $this->lien($q, $f, '', true));
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: ../index.php?page=connexion');
         exit;
     }
 
-    private function demande($source)
-    {
-        $noms = [
-            'halal' => 'Halal', 'prix' => '≤ 10 €', 'ouvert' => 'Ouvert', 'vege' => 'Végé',
-            'pres' => '≤ 5 min', 'burger' => 'Burger', 'poulet' => 'Poulet', 'pizza' => 'Pizza',
-            'sushi' => 'Sushi', 'tacos' => 'Tacos',
-        ];
-        $q = trim($source['q'] ?? '');
-        $f = [];
-        foreach ($noms as $k => $lab) {
-            $f[$k] = isset($source[$k]);
-        }
-        return [$q, $f, $noms];
+    $id = '';
+    if (isset($_POST['id'])) {
+        $id = (string) $_POST['id'];
     }
 
-    // Reconstruit l'URL de la page. $changer inverse un filtre, comme un lien On/Off.
-    private function lien($q, $f, $changer = '', $retour = false)
-    {
-        $args = ['page' => 'explorer'];
-        if ($q !== '') {
-            $args['q'] = $q;
+    $dejaDedans = false;
+    $garde = array();
+    foreach ($_SESSION['roulette'] as $idDeja) {
+        if ($idDeja == $id) {
+            $dejaDedans = true;
+        } else {
+            $garde[] = $idDeja;
         }
-        foreach ($f as $nom => $actif) {
-            if ($changer === $nom) {
-                $actif = !$actif;
-            }
-            if ($actif) {
-                $args[$nom] = '1';
-            }
+    }
+    if ($dejaDedans == false && $id != '') {
+        $garde[] = $id;
+    }
+    $_SESSION['roulette'] = $garde;
+
+    $adresse = '../index.php?page=explorer';
+    if (isset($_POST['q']) && trim($_POST['q']) != '') {
+        $adresse = $adresse . '&q=' . urlencode(trim($_POST['q']));
+    }
+    $nomsPost = array('halal', 'prix', 'ouvert', 'vege', 'pres', 'burger', 'poulet', 'pizza', 'sushi', 'tacos');
+    foreach ($nomsPost as $nom) {
+        if (isset($_POST[$nom])) {
+            $adresse = $adresse . '&' . $nom . '=1';
         }
-        return ($retour ? '../index.php?' : 'index.php?') . http_build_query($args);
+    }
+
+    header('Location: ' . $adresse);
+    exit;
+}
+
+// 2. Page : on prépare la liste, puis la vue l'affiche.
+if (!isset($_SESSION['user_id'])) {
+    header('Location: index.php?page=connexion');
+    exit;
+}
+
+$restaurants = new ExplorerModel($bdd);
+
+$q = '';
+if (isset($_GET['q'])) {
+    $q = trim($_GET['q']);
+}
+
+$noms = array(
+    'halal' => 'Halal',
+    'prix' => '≤ 10 €',
+    'ouvert' => 'Ouvert',
+    'vege' => 'Végé',
+    'pres' => '≤ 5 min',
+    'burger' => 'Burger',
+    'poulet' => 'Poulet',
+    'pizza' => 'Pizza',
+    'sushi' => 'Sushi',
+    'tacos' => 'Tacos',
+);
+
+$f = array();
+foreach ($noms as $cle => $label) {
+    if (isset($_GET[$cle])) {
+        $f[$cle] = true;
+    } else {
+        $f[$cle] = false;
     }
 }
 
-// Point d'entrée du POST, copié sur le switch de utilisateurController.php.
-if (isset($_POST['action']) && realpath((string) $_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
-    session_start();
-    require_once __DIR__ . '/../private/bdd.php';
+$campus = $restaurants->campusDe($_SESSION['user_id']);
+$liste = array();
+$lieux = array();
+$roulette = array();
+$message = '';
 
-    $explorerController = new explorerController($bdd);
-    switch ($_POST['action']) {
-        case 'roulette':
-            $explorerController->roulette();
-            break;
+if ($campus) {
+    $cle = 'pres_' . $campus['id'];
+    if (empty($_SESSION[$cle]) || !is_array($_SESSION[$cle])) {
+        $charges = $restaurants->autour($campus['lat'], $campus['lng']);
+        if (count($charges) > 10) {
+            $_SESSION[$cle] = $charges;
+        }
     }
 
-    header('Location: ../index.php?page=explorer');
-    exit;
+    $tous = array();
+    if (isset($_SESSION[$cle]) && is_array($_SESSION[$cle])) {
+        $tous = $_SESSION[$cle];
+    }
+
+    $choix = $restaurants->filtrer($tous, $q, $f, $_SESSION['roulette']);
+    $liste = $choix['liste'];
+    $roulette = $choix['roulette'];
+
+    // Sur la carte, on espace les prix pour qu'ils ne se touchent pas.
+    $lieux = array();
+    foreach ($choix['lieux'] as $resto) {
+        $loin = true;
+        foreach ($lieux as $deja) {
+            $ecart = abs($resto['lat'] - $deja['lat']) + abs($resto['lng'] - $deja['lng']);
+            if ($ecart < 0.006) {
+                $loin = false;
+            }
+        }
+        if ($loin) {
+            $lieux[] = $resto;
+        }
+        if (count($lieux) >= 36) {
+            break;
+        }
+    }
+} else {
+    $message = "On ne trouve pas l'adresse de ton établissement. Vérifie le nom saisi à l'inscription.";
+}
+
+$liens = array();
+foreach ($noms as $cle => $label) {
+    $liens[$cle] = lienExplorer($q, $f, $cle);
+}
+$lien = lienExplorer($q, $f, '');
+$nb = count($liste);
+
+$pastilles = array();
+foreach ($roulette as $resto) {
+    if (count($pastilles) < 3) {
+        $pastilles[] = $resto;
+    }
+}
+
+$suite = false;
+if ($f['pres'] || $f['burger'] || $f['poulet'] || $f['pizza'] || $f['sushi'] || $f['tacos']) {
+    $suite = true;
+}
+
+function lienExplorer($q, $f, $changer)
+{
+    $adresse = 'index.php?page=explorer';
+    if ($q != '') {
+        $adresse = $adresse . '&q=' . urlencode($q);
+    }
+    foreach ($f as $nom => $actif) {
+        if ($nom == $changer) {
+            if ($actif) {
+                $actif = false;
+            } else {
+                $actif = true;
+            }
+        }
+        if ($actif) {
+            $adresse = $adresse . '&' . $nom . '=1';
+        }
+    }
+    return $adresse;
+}
+
+function texte($valeur)
+{
+    return htmlspecialchars((string) $valeur);
 }
