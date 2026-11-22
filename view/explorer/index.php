@@ -1,5 +1,5 @@
 <?php include('controller/explorerController.php'); ?>
-<link rel="stylesheet" href="public/asset/css/explorer.css?v=4">
+<link rel="stylesheet" href="public/asset/css/explorer.css?v=5">
 <div class="ex">
     <section class="liste">
         <h1>Autour de moi</h1>

@@ -187,6 +187,10 @@ body:has(.ex) {
     overflow: hidden;
 }
 
+#carte {
+    z-index: 1;
+}
+
 .bulle {
     position: relative;
     border: 0;
@@ -211,6 +215,8 @@ body:has(.ex) {
 
 .bulle.on {
     background: #ff6b3d;
+    z-index: 3;
+    transform: translateY(-16px);
 }
 
 .bulle.on:after {
