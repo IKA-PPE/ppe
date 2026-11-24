@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Graille</title>
-    <link rel="stylesheet" href="public/asset/css/output.css">
+       <link rel="stylesheet" href="public/asset/css/output.css">
+    <?php if (!empty($pageCss)): ?>
+        <link rel="stylesheet" href="public/asset/css/<?= $pageCss ?>.css?v=2">
+    <?php endif; ?>
+</head>
+    
 </head>
 <body class="bg-fond text-texte font-sans min-h-screen <?= isset($_SESSION['user_id']) ? 'lg:flex' : '' ?>">
 

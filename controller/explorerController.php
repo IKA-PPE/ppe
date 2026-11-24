@@ -151,6 +151,8 @@ if ($f['pres'] || $f['burger'] || $f['poulet'] || $f['pizza'] || $f['sushi'] || 
     $suite = true;
 }
 
+// Construit le lien d'un filtre : garde la recherche et les filtres actifs,
+// et allume ou éteint le filtre $changer.
 function lienExplorer($q, $f, $changer)
 {
     $adresse = 'index.php?page=explorer';
@@ -172,6 +174,7 @@ function lienExplorer($q, $f, $changer)
     return $adresse;
 }
 
+// Protège un texte avant de l'afficher dans le HTML (évite les failles XSS).
 function texte($valeur)
 {
     return htmlspecialchars((string) $valeur);

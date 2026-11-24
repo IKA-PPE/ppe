@@ -43,6 +43,7 @@ function plusDeFiltres() {
     }
 }
 
+// Crée la carte centrée sur le campus et branche les boutons (recentrer, liste).
 function creerCarte() {
     carte = new maplibregl.Map({
         container: 'carte',
@@ -57,6 +58,7 @@ function creerCarte() {
     document.querySelector('.liste').onclick = clicListe;
 }
 
+// Quand la carte est chargée : pose le point du campus et les prix des restos.
 function cartePrete() {
     var bloc = document.createElement('div');
     bloc.className = 'nous';
@@ -221,6 +223,7 @@ function espacer() {
     }
 }
 
+// Bouton "ici" : ramène la carte sur le campus.
 function recentrer() {
     carte.easeTo({ center: [campus.lng, campus.lat], zoom: 14.4 });
 }

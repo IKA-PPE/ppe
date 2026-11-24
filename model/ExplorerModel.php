@@ -3,6 +3,7 @@ class ExplorerModel
 {
     private $bdd;
 
+    // Garde la connexion à la base de données pour les requêtes du modèle.
     public function __construct($bdd)
     {
         $this->bdd = $bdd;
@@ -131,11 +132,13 @@ class ExplorerModel
         $liste = array_slice($ok, 0, $limite);
         return array('liste' => $liste, 'lieux' => $ok, 'roulette' => $roulette);
     }
+    // Renvoie la valeur d'un tag OpenStreetMap, ou '' s'il n'existe pas.
     private function lire($tags, $cle)
     {
         if (isset($tags[$cle])) { return $tags[$cle]; }
         return '';
     }
+    // true si le texte contient au moins un des mots de la liste.
     private function contient($texte, $mots)
     {
         foreach ($mots as $mot) {

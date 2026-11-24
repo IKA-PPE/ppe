@@ -11,6 +11,14 @@ if ($page === 'deconnexion') {
     exit;
 }
 
+// CSS / JS propres à une page : public/asset/css/<nom>.css et public/asset/js/<nom>.js
+// Ils sont affichés par view/layout/header.php ($pageCss) et view/layout/footer.php ($pageJs)
+$assetsPages = [
+    'roulette' => ['css' => 'roulette', 'js' => 'roulette'],
+];
+$pageCss = $assetsPages[$page]['css'] ?? null;
+$pageJs  = $assetsPages[$page]['js'] ?? null;
+
 include __DIR__ . '/view/layout/header.php';
 
     switch ($page) {
