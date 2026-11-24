@@ -1,0 +1,351 @@
+/* Page Budget : indicateurs, graphe par jour, historique, fenêtres. */
+
+.bud-fleche {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #1c1c21;
+    color: #f5f5f7;
+}
+
+.bud-fleche:hover {
+    background: #2a2a31;
+}
+
+.bud-fleche.off {
+    color: rgba(235, 235, 245, 0.25);
+    background: transparent;
+}
+
+/* Indicateurs */
+.bud-kpi {
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: #121215;
+}
+
+.bud-kpi-titre {
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 12px;
+}
+
+.bud-kpi-valeur {
+    margin-top: 4px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Onglets Mois / Semaine */
+.bud-onglets {
+    display: flex;
+    padding: 3px;
+    border-radius: 10px;
+    background: #1c1c21;
+}
+
+.bud-onglets button {
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.bud-onglets button.on {
+    background: #2a2a31;
+    color: #f5f5f7;
+}
+
+/* Graphe des dépenses par jour */
+.bud-graphe,
+.bud-axe {
+    display: flex;
+    gap: 6px;
+}
+
+.bud-graphe {
+    height: 160px;
+    margin-top: 22px;
+    align-items: flex-end;
+}
+
+.bud-barre {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    min-width: 0;
+}
+
+.bud-barre span {
+    display: block;
+    width: 100%;
+    border-radius: 3px 3px 2px 2px;
+    background: #2a2a31;
+    transition: background 0.15s;
+}
+
+.bud-barre:hover span {
+    background: #3a3a44;
+}
+
+.bud-barre.vide span {
+    height: 3px !important;
+    background: #1f1f25;
+}
+
+.bud-barre.futur span {
+    height: 3px !important;
+    background: #18181c;
+}
+
+.bud-barre.auj span {
+    background: linear-gradient(180deg, #ff9a6b, #f2582a);
+}
+
+.bud-axe {
+    margin-top: 8px;
+    color: rgba(235, 235, 245, 0.4);
+    font-size: 11.5px;
+}
+
+.bud-axe span {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.bud-axe span:first-child {
+    justify-content: flex-start;
+}
+
+.bud-axe span:last-child {
+    justify-content: flex-end;
+}
+
+.bud-graphe.semaine,
+.bud-axe.semaine {
+    gap: 18px;
+}
+
+/* Historique */
+.bud-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.bud-table th {
+    padding: 14px 18px 10px;
+    color: rgba(235, 235, 245, 0.4);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bud-table td {
+    padding: 12px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.bud-table tbody tr:first-child td {
+    border-top: 0;
+}
+
+.bud-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.bud-av {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 800;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.25));
+}
+
+.bud-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #2a2a31;
+    color: rgba(235, 235, 245, 0.75);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.bud-suppr {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(235, 235, 245, 0.34);
+    cursor: pointer;
+    opacity: 0;
+}
+
+.bud-table tr:hover .bud-suppr,
+.bud-suppr:focus-visible {
+    opacity: 1;
+}
+
+.bud-suppr:hover {
+    background: rgba(255, 69, 58, 0.12);
+    color: #ff453a;
+}
+
+@media (hover: none) {
+    .bud-suppr {
+        opacity: 1;
+    }
+}
+
+/* Fenêtres */
+.bud-fenetre {
+    margin: auto;
+    width: min(400px, calc(100% - 32px));
+    padding: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    background: #121215;
+    color: #f5f5f7;
+}
+
+.bud-fenetre::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.bud-fenetre h2 {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.bud-fenetre p {
+    margin-top: 4px;
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 14px;
+}
+
+.bud-fenetre label {
+    display: block;
+    margin-top: 14px;
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.bud-fenetre input,
+.bud-fenetre select {
+    display: block;
+    width: 100%;
+    height: 44px;
+    margin-top: 6px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: #1c1c21;
+    color: #f5f5f7;
+    font-size: 15px;
+    outline: none;
+    color-scheme: dark;
+}
+
+.bud-fenetre input:focus,
+.bud-fenetre select:focus {
+    border-color: #ff6b3d;
+}
+
+.bud-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.bud-btns button {
+    flex: 1;
+    height: 42px;
+    border: 0;
+    border-radius: 12px;
+    background: #2a2a31;
+    color: #f5f5f7;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.bud-btns .ok {
+    background: #ff6b3d;
+    color: #fff;
+}
+
+/* Ordinateur : la page tient dans la hauteur de l'écran.
+   Le graphe et l'historique se partagent l'espace libre ; l'historique défile à l'intérieur.
+   80px = marges haut + bas du <main> (py-10). */
+@media (min-width: 1024px) and (min-height: 760px) {
+    .bud-page {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 80px);
+    }
+
+    .bud-milieu {
+        flex: 1.15 1 0;
+        min-height: 250px;
+    }
+
+    .bud-carte-graphe {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .bud-graphe {
+        flex: 1;
+        height: auto;
+        min-height: 110px;
+    }
+
+    .bud-types {
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #2a2a31 transparent;
+    }
+
+    .bud-historique {
+        flex: 1 1 0;
+        min-height: 170px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #2a2a31 transparent;
+    }
+
+    /* En-têtes du tableau toujours visibles quand on fait défiler */
+    .bud-historique thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #121215;
+    }
+}

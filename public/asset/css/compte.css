@@ -1,0 +1,384 @@
+/* Page Paramètres du compte : cartes de formulaires et fenêtre de suppression. */
+
+.cpt-carte {
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: #121215;
+    display: flex;
+    flex-direction: column;
+}
+
+.cpt-ligne {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+}
+
+.cpt-carte h2 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+}
+
+.cpt-aide {
+    margin-bottom: 6px;
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 13.5px;
+}
+
+.cpt-carte label,
+.cpt-fenetre label {
+    display: block;
+    margin-top: 12px;
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cpt-carte input[type=text],
+.cpt-carte input[type=email],
+.cpt-carte input[type=password],
+.cpt-fenetre input {
+    display: block;
+    width: 100%;
+    height: 44px;
+    margin-top: 6px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: #1c1c21;
+    color: #f5f5f7;
+    font-size: 15px;
+    font-weight: 400;
+    outline: none;
+}
+
+.cpt-carte input:focus,
+.cpt-fenetre input:focus {
+    border-color: #ff6b3d;
+}
+
+.cpt-avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #bf5af2, #5e5ce6);
+    color: #fff;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.cpt-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    color: #32d74b;
+    font-size: 13px;
+}
+
+/* Boutons en bas des cartes */
+.cpt-bas {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 18px;
+}
+
+.cpt-ok {
+    height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(255, 107, 61, 0.15);
+    color: #ff8f5e;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cpt-ok:hover {
+    background: rgba(255, 107, 61, 0.25);
+}
+
+.cpt-lien {
+    margin-right: auto;
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 13.5px;
+}
+
+.cpt-lien:hover {
+    color: #f5f5f7;
+}
+
+/* Préférences alimentaires : puces à cocher */
+.cpt-puces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cpt-carte label.cpt-puce {
+    margin-top: 6px;
+    cursor: pointer;
+}
+
+.cpt-puce input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cpt-puce span {
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #2a2a31;
+    color: #f5f5f7;
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.cpt-puce input:checked + span {
+    background: #ff6b3d;
+    color: #fff;
+}
+
+.cpt-puce input:checked + span::before {
+    content: "✓";
+    margin-right: 6px;
+}
+
+.cpt-puce input:focus-visible + span {
+    outline: 2px solid #ff8f5e;
+    outline-offset: 2px;
+}
+
+/* Zone sensible */
+.cpt-danger {
+    border-color: rgba(255, 69, 58, 0.25);
+}
+
+.cpt-rouge {
+    height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(255, 69, 58, 0.12);
+    color: #ff453a;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cpt-rouge:hover {
+    background: rgba(255, 69, 58, 0.2);
+}
+
+/* Fenêtre de confirmation */
+.cpt-fenetre {
+    margin: auto;
+    width: min(420px, calc(100% - 32px));
+    padding: 22px;
+    border: 1px solid rgba(255, 69, 58, 0.3);
+    border-radius: 20px;
+    background: #121215;
+    color: #f5f5f7;
+}
+
+.cpt-fenetre::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.cpt-fenetre h2 {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.cpt-fenetre p {
+    margin-top: 4px;
+    color: rgba(235, 235, 245, 0.62);
+    font-size: 14px;
+}
+
+.cpt-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.cpt-btns button {
+    flex: 1;
+    height: 42px;
+    border: 0;
+    border-radius: 12px;
+    background: #2a2a31;
+    color: #f5f5f7;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cpt-btns .rouge {
+    background: #ff453a;
+    color: #fff;
+}
+
+/* Photo de profil */
+.cpt-identite {
+    align-items: flex-start;
+}
+
+.cpt-photo {
+    position: relative;
+    display: block;
+    flex: none;
+    width: 84px;
+    height: 84px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.cpt-photo img,
+.cpt-photo > span:first-child {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    object-fit: cover;
+    background: linear-gradient(135deg, #bf5af2, #5e5ce6);
+    color: #fff;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.cpt-photo-icone {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #121215;
+    border-radius: 999px;
+    background: #ff6b3d;
+    color: #fff;
+}
+
+.cpt-photo:hover img,
+.cpt-photo:hover > span:first-child {
+    filter: brightness(0.85);
+}
+
+.cpt-photo.envoi {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.cpt-petit {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.cpt-gris {
+    border: 0;
+    border-radius: 12px;
+    background: #2a2a31;
+    color: #f5f5f7;
+    font-weight: 600;
+}
+
+.cpt-gris:hover {
+    background: #34343c;
+}
+
+/* Les labels de la photo ne prennent pas le style des labels de formulaire */
+.cpt-carte label.cpt-photo {
+    display: block;
+    margin-top: 0;
+}
+
+.cpt-carte label.cpt-petit {
+    display: inline-flex;
+    margin-top: 0;
+    color: #ff8f5e;
+    font-size: 13px;
+}
+
+/* Mise en page : par défaut, les colonnes s'effacent et les cartes
+   s'enchaînent sur la grille à 2 colonnes (la suppression du compte en dernier). */
+.cpt-col {
+    display: contents;
+}
+
+.cpt-danger {
+    order: 10;
+}
+
+/* Grand écran : 3 colonnes qui remplissent toute la hauteur, sans défilement.
+   80px = marges haut + bas du <main> (py-10). */
+@media (min-width: 1280px) and (min-height: 760px) {
+    .cpt-page {
+        max-width: none;
+        min-height: calc(100vh - 80px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cpt-grille {
+        flex: 1;
+        min-height: auto;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cpt-col {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    /* La dernière carte de chaque colonne s'étire : les 3 colonnes finissent à la même hauteur */
+    .cpt-col > :last-child {
+        flex: 1;
+    }
+
+    /* Colonne 1 : c'est la carte Profil qui s'allonge, la carte Supprimer garde sa taille */
+    .cpt-col > .cpt-etire {
+        flex: 1;
+    }
+
+    .cpt-col > .cpt-danger {
+        flex: none;
+    }
+
+    .cpt-danger {
+        order: 0;
+    }
+
+    /* Colonne étroite : les champs du mot de passe passent les uns sous les autres */
+    .cpt-mdp-champs {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Colonne étroite : texte puis bouton, l'un sous l'autre */
+    .cpt-danger > div {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+}

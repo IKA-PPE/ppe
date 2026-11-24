@@ -1,35 +1,8 @@
-<?php
-if (!isset($_SESSION['user_id'])) { header('Location: index.php?page=connexion'); exit; }
-require_once __DIR__ . '/../../private/bdd.php';
-require_once __DIR__ . '/../../model/utilisateur.php';
-require_once __DIR__ . '/../../model/DepenseModel.php';
+<?php include('controller/accueilController.php'); ?>
+<link rel="stylesheet" href="public/asset/css/accueil.css?v=3">
 
-$utilisateurModel = new utilisateur($bdd);
-$utilisateur = $utilisateurModel->trouverParId((int) $_SESSION['user_id']);
-if (!$utilisateur) { session_destroy(); header('Location: index.php?page=connexion'); exit; }
-$flash = $_SESSION['flash'] ?? null; unset($_SESSION['flash']);
-
-// Budget du mois
-$budget        = (float) ($utilisateur['budget_mensuel'] ?? 0);
-$depense       = (new DepenseModel($bdd))->totalDuMois((int) $utilisateur['id']);
-$restant       = max(0, $budget - $depense);
-$joursRestants = (int) date('t') - (int) date('j') + 1;
-$parJour       = $restant / $joursRestants;
-// Anneau : part du budget qui reste (périmètre du cercle = 276.5)
-$anneau        = $budget > 0 ? 276.5 * (1 - $restant / $budget) : 276.5;
-
-// Date du jour en français
-$jours = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-$mois  = ['', 'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-$aujourdhui = $jours[(int) date('w')] . ' ' . date('j') . ' ' . $mois[(int) date('n')];
-
-// Restaurants : données d'exemple en attendant la table restaurant et l'API Google Maps
-$restos = [
-    ['nom' => 'Bao Bar',         'court' => 'Bao',  'temps' => '4 min', 'prix' => '7–11 €', 'couleur' => 'from-[#FF9A5A] to-[#C2410C]'],
-    ['nom' => 'Pita Lab',        'court' => 'Pita', 'temps' => '6 min', 'prix' => '6–9 €',  'couleur' => 'from-[#F6C453] to-[#B45309]'],
-    ['nom' => 'Resto U Censier', 'court' => 'RU',   'temps' => '3 min', 'prix' => '3,30 €', 'couleur' => 'from-[#C4B5FD] to-[#6D28D9]'],
-];
-?>
+<!-- Sur ordinateur, la page tient exactement dans la hauteur de l'écran -->
+<div class="acc-page">
 
 <!-- Barre du haut : recherche -->
 <div class="flex items-center gap-3 mb-6">
@@ -42,23 +15,23 @@ $restos = [
     </form>
 </div>
 
-<?php if ($flash): ?>
-    <div class="mb-6 rounded-xl p-3.5 text-sm <?= $flash['type'] === 'erreur' ? 'bg-danger/10 text-danger border border-danger/30' : 'bg-succes/10 text-succes border border-succes/30' ?>">
-        <?= htmlspecialchars($flash['message']) ?>
+<?php if ($flash) { ?>
+    <div class="mb-6 rounded-xl p-3.5 text-sm <?php if ($flash['type'] == 'erreur') { echo 'bg-danger/10 text-danger border border-danger/30'; } else { echo 'bg-succes/10 text-succes border border-succes/30'; } ?>">
+        <?php echo texte($flash['message']); ?>
     </div>
-<?php endif; ?>
+<?php } ?>
 
 <!-- Salutation + actions -->
 <div class="flex flex-col sm:flex-row sm:items-end gap-4">
     <div>
-        <p class="text-xs font-semibold uppercase tracking-wider text-texte-2"><?= $aujourdhui ?></p>
-        <h1 class="text-[32px] font-bold tracking-tight leading-tight">Salut <?= htmlspecialchars($utilisateur['prenom']) ?></h1>
+        <p class="text-xs font-semibold uppercase tracking-wider text-texte-2"><?php echo $aujourdhui; ?></p>
+        <h1 class="text-[32px] font-bold tracking-tight leading-tight">Salut <?php echo texte($utilisateur['prenom']); ?></h1>
     </div>
     <div class="flex gap-2.5 sm:ml-auto">
-        <a href="index.php?page=budget" class="flex flex-1 sm:flex-none justify-center items-center gap-2 h-11 rounded-[13px] bg-surface-2 px-3 sm:px-4 whitespace-nowrap text-sm sm:text-[15px] font-semibold hover:bg-surface-3 transition-colors">
+        <button type="button" data-ouvrir="fenetre-depense" class="flex flex-1 sm:flex-none justify-center items-center gap-2 h-11 rounded-[13px] bg-surface-2 px-3 sm:px-4 whitespace-nowrap text-sm sm:text-[15px] font-semibold hover:bg-surface-3 transition-colors cursor-pointer">
             <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>
             <span class="sm:hidden">Dépense</span><span class="hidden sm:inline">Ajouter une dépense</span>
-        </a>
+        </button>
         <a href="index.php?page=roulette" class="flex flex-1 sm:flex-none justify-center items-center gap-2 h-11 rounded-[13px] px-3 sm:px-4 whitespace-nowrap text-sm sm:text-[15px] font-semibold text-white bg-linear-to-b from-[#ff7a4d] to-[#f2582a] shadow-[0_10px_24px_-10px_rgba(255,107,61,.7)] hover:brightness-110 transition">
             <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3v6.6M12 14.4V21M3 12h6.6M14.4 12H21M5.6 5.6l4.7 4.7M13.7 13.7l4.7 4.7"/></svg>
             <span class="sm:hidden">Roulette</span><span class="hidden sm:inline">Lancer la roulette</span>
@@ -66,112 +39,189 @@ $restos = [
     </div>
 </div>
 
-<div class="grid gap-[18px] mt-5 lg:grid-cols-3">
+<div class="acc-grille grid gap-[18px] mt-5 lg:grid-cols-3">
 
     <!-- Carte budget -->
     <div class="rounded-[20px] border border-white/10 bg-linear-to-br from-[#1d1512] to-surface-1 to-60% p-5 flex items-center gap-5">
-        <?php if ($budget > 0): ?>
+        <?php if ($budget > 0) { ?>
             <svg width="108" height="108" viewBox="0 0 104 104" class="shrink-0">
                 <defs><linearGradient id="anneau" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB38A"/><stop offset="1" stop-color="#F2582A"/></linearGradient></defs>
                 <circle cx="52" cy="52" r="44" fill="none" stroke="#2A2A31" stroke-width="11"/>
-                <circle cx="52" cy="52" r="44" fill="none" stroke="url(#anneau)" stroke-width="11" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="<?= round($anneau, 1) ?>" transform="rotate(-90 52 52)"/>
-                <text x="52" y="50" text-anchor="middle" fill="#F5F5F7" font-size="20" font-weight="700"><?= number_format($restant, 0, ',', ' ') ?> €</text>
+                <circle cx="52" cy="52" r="44" fill="none" stroke="url(#anneau)" stroke-width="11" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="<?php echo round($anneau, 1); ?>" transform="rotate(-90 52 52)"/>
+                <text x="52" y="50" text-anchor="middle" fill="#F5F5F7" font-size="20" font-weight="700"><?php echo number_format($restant, 0, ',', ' '); ?> €</text>
                 <text x="52" y="67" text-anchor="middle" fill="rgba(235,235,245,.6)" font-size="11">restants</text>
             </svg>
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 min-w-0">
                 <div>
                     <div class="text-xs text-texte-2">Dépensé</div>
-                    <div class="font-semibold"><?= number_format($depense, 2, ',', ' ') ?> € <span class="text-sm font-normal text-texte-3">/ <?= number_format($budget, 0, ',', ' ') ?> €</span></div>
+                    <div class="font-semibold"><?php echo prix($depense); ?> € <span class="text-sm font-normal text-texte-3">/ <?php echo number_format($budget, 0, ',', ' '); ?> €</span></div>
                 </div>
                 <div>
                     <div class="text-xs text-texte-2">Tu peux dépenser</div>
-                    <div class="font-semibold <?= $parJour > 0 ? 'text-succes' : 'text-danger' ?>"><?= number_format($parJour, 2, ',', ' ') ?> € / jour</div>
+                    <div class="font-semibold <?php if ($parJour > 0) { echo 'text-succes'; } else { echo 'text-danger'; } ?>"><?php echo prix($parJour); ?> € / jour</div>
                 </div>
-                <div class="text-xs text-texte-3"><?= $joursRestants ?> jour<?= $joursRestants > 1 ? 's' : '' ?> restant<?= $joursRestants > 1 ? 's' : '' ?></div>
+                <div class="text-xs text-texte-3">
+                    <?php echo $joursRestants; ?> jour<?php if ($joursRestants > 1) { echo 's'; } ?> restant<?php if ($joursRestants > 1) { echo 's'; } ?>
+                    · <button type="button" data-ouvrir="fenetre-budget" class="text-accent-2 hover:underline cursor-pointer">Modifier</button>
+                </div>
             </div>
-        <?php else: ?>
+        <?php } else { ?>
             <div>
                 <div class="text-xs font-semibold uppercase tracking-wider text-texte-2">Budget du mois</div>
                 <p class="mt-2 text-texte-2 text-sm">Tu n'as pas encore défini ton budget mensuel.</p>
-                <a href="index.php?page=budget" class="inline-flex mt-4 h-10 items-center rounded-xl bg-accent/15 px-4 text-sm font-semibold text-accent-2 hover:bg-accent/25 transition-colors">Définir mon budget</a>
+                <button type="button" data-ouvrir="fenetre-budget" class="inline-flex mt-4 h-10 items-center rounded-xl bg-accent/15 px-4 text-sm font-semibold text-accent-2 hover:bg-accent/25 transition-colors cursor-pointer">Définir mon budget</button>
             </div>
-        <?php endif; ?>
+        <?php } ?>
     </div>
 
-    <!-- Carte des restos (aperçu en attendant Google Maps) -->
-    <div class="relative min-h-[440px] overflow-hidden rounded-[20px] border border-white/10 bg-[#15171c] lg:col-span-2 lg:row-span-3">
-        <svg class="absolute inset-0 h-full w-full" viewBox="0 0 700 460" preserveAspectRatio="none">
-            <rect x="420" y="40" width="200" height="110" rx="10" fill="#1b2a20"/>
-            <rect x="40" y="300" width="140" height="90" rx="10" fill="#1b2a20"/>
-            <path d="M-10 230 C200 200 450 270 710 220" stroke="#2a2d35" stroke-width="20" fill="none"/>
-            <path d="M260 -10 L300 470" stroke="#2a2d35" stroke-width="16" fill="none"/>
-            <path d="M-10 380 L710 330" stroke="#24272e" stroke-width="10" fill="none"/>
-            <path d="M560 -10 L500 470" stroke="#24272e" stroke-width="10" fill="none"/>
-            <path d="M-10 110 L710 140" stroke="#212329" stroke-width="7" fill="none"/>
-            <path d="M-10 300 Q350 330 710 290" stroke="#1d2a3a" stroke-width="26" fill="none"/>
-        </svg>
+    <!-- Carte des restos autour du campus -->
+    <div class="acc-zone relative min-h-[440px] overflow-hidden rounded-[20px] border border-white/10 bg-[#15171c] lg:col-span-2 lg:row-span-3">
+        <div id="carte-accueil"></div>
 
         <div class="absolute left-4 top-4 z-10 flex gap-2">
-            <span class="flex h-8 items-center gap-1.5 rounded-full bg-accent px-3 text-[13px] font-medium text-white">Halal</span>
-            <span class="flex h-8 items-center rounded-full bg-surface-2/85 px-3 text-[13px] font-medium">≤ 10 €</span>
-            <span class="flex h-8 items-center rounded-full bg-surface-2/85 px-3 text-[13px] font-medium">Ouvert</span>
+            <button type="button" class="acc-filtre" data-filtre="halal">Halal</button>
+            <button type="button" class="acc-filtre" data-filtre="prix">≤ 10 €</button>
+            <button type="button" class="acc-filtre" data-filtre="ouvert">Ouvert</button>
         </div>
-
-        <!-- Position et campus -->
-        <span class="absolute left-[38%] top-[57%] z-10 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-500/90 px-2 py-1 text-[11.5px] font-bold text-white"><?= htmlspecialchars($utilisateur['etablissement']) ?></span>
-        <span class="absolute left-[44%] top-[49%] z-10 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-blue-500 shadow-[0_0_0_10px_rgba(10,132,255,.2),0_0_0_22px_rgba(10,132,255,.08)]"></span>
-
-        <!-- Restaurants -->
-        <span class="absolute left-[63%] top-[36%] z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-[10px] bg-accent px-2.5 py-1 text-[12.5px] font-bold text-white shadow-lg">Bao Bar · 8,90 €</span>
-        <span class="absolute left-[22%] top-[75%] z-10 -translate-x-1/2 -translate-y-full rounded-[10px] border border-white/15 bg-surface-2 px-2.5 py-1 text-[12.5px] font-bold shadow-lg">6 €</span>
-        <span class="absolute left-[84%] top-[58%] z-10 -translate-x-1/2 -translate-y-full rounded-[10px] border border-white/15 bg-surface-2 px-2.5 py-1 text-[12.5px] font-bold shadow-lg">11 €</span>
-        <span class="absolute left-[17%] top-[32%] z-10 -translate-x-1/2 -translate-y-full rounded-[10px] border border-white/15 bg-surface-2 px-2.5 py-1 text-[12.5px] font-bold shadow-lg">3,30 €</span>
-        <span class="absolute left-[60%] top-[86%] z-10 -translate-x-1/2 -translate-y-full rounded-[10px] border border-white/15 bg-surface-2 px-2.5 py-1 text-[12.5px] font-bold shadow-lg">9 €</span>
 
         <div class="absolute right-4 top-4 z-10 flex flex-col overflow-hidden rounded-xl border border-white/15 bg-surface-2/85 backdrop-blur">
-            <span class="grid h-9 w-9 place-items-center text-lg">+</span>
-            <span class="grid h-9 w-9 place-items-center border-t border-white/10 text-lg">−</span>
+            <button type="button" id="zoom-plus" class="grid h-9 w-9 place-items-center text-lg cursor-pointer hover:bg-white/10" title="Zoomer">+</button>
+            <button type="button" id="zoom-moins" class="grid h-9 w-9 place-items-center border-t border-white/10 text-lg cursor-pointer hover:bg-white/10" title="Dézoomer">−</button>
         </div>
+
+        <?php if ($message != '') { ?>
+            <p class="absolute inset-x-4 bottom-4 z-10 rounded-xl bg-surface-2/90 p-3 text-sm text-texte-2"><?php echo texte($message); ?></p>
+        <?php } ?>
     </div>
 
     <!-- Restos près du campus -->
-    <div class="rounded-[20px] border border-white/10 bg-surface-1 py-1.5">
+    <div class="acc-proches rounded-[20px] border border-white/10 bg-surface-1 py-1.5">
         <div class="flex items-center justify-between px-4 pb-1.5 pt-2.5">
             <h2 class="font-bold tracking-tight">Près du campus</h2>
             <a href="index.php?page=explorer" class="text-sm font-medium text-accent">Tout voir</a>
         </div>
-        <?php foreach ($restos as $i => $resto): ?>
-            <a href="index.php?page=explorer" class="relative flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
-                <?php if ($i > 0): ?><span class="absolute left-4 right-0 top-0 h-px bg-white/10"></span><?php endif; ?>
-                <span class="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-xl bg-linear-to-br <?= $resto['couleur'] ?> text-xs font-extrabold"><?= $resto['court'] ?></span>
-                <span class="flex-1">
-                    <span class="block font-semibold"><?= $resto['nom'] ?></span>
-                    <span class="block text-xs text-texte-2"><?= $resto['temps'] ?> · <?= $resto['prix'] ?></span>
+        <?php if (count($proches) == 0) { ?>
+            <p class="px-4 py-3 text-sm text-texte-2">Aucun resto trouvé autour du campus.</p>
+        <?php } ?>
+        <div class="acc-proches-liste">
+        <?php foreach ($proches as $i => $resto) { ?>
+            <a href="index.php?page=explorer&amp;q=<?php echo urlencode($resto['nom']); ?>" data-resto="<?php echo texte($resto['id']); ?>" class="acc-ligne relative flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors<?php if ($i >= 3) { echo ' acc-plus'; } ?>">
+                <?php if ($i > 0) { ?><span class="absolute left-4 right-0 top-0 h-px bg-white/10"></span><?php } ?>
+                <span class="acc-av" style="background-color:<?php echo texte($resto['fond']); ?>;color:<?php echo texte($resto['encre']); ?>"><?php echo texte($resto['sigle']); ?></span>
+                <span class="flex-1 min-w-0">
+                    <span class="block truncate font-semibold"><?php echo texte($resto['nom']); ?></span>
+                    <span class="block text-xs text-texte-2"><?php echo $resto['min']; ?> min · <?php echo texte($resto['euro']); ?><?php if ($resto['halal']) { echo ' · Halal'; } ?></span>
                 </span>
                 <svg class="h-4 w-4 text-texte-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>
             </a>
-        <?php endforeach; ?>
+        <?php } ?>
+        </div>
     </div>
 
-    <!-- Vote de groupe (aperçu en attendant la table groupe) -->
+    <!-- Vote de groupe -->
     <div class="rounded-[20px] border border-white/10 bg-surface-1 p-4">
-        <div class="flex items-center justify-between">
-            <h2 class="font-bold tracking-tight">Vote · BTS SIO 2</h2>
-            <span class="text-sm font-semibold text-accent-2">00:42</span>
-        </div>
-        <div class="mt-3 space-y-2.5 text-sm">
-            <div>
-                <div class="flex justify-between"><span>Bao Bar</span><b>2</b></div>
-                <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3"><div class="h-full w-1/2 rounded-full bg-accent"></div></div>
+        <?php if ($vote) { ?>
+            <div class="flex items-center justify-between gap-3">
+                <h2 class="truncate font-bold tracking-tight">Vote · <?php echo texte($vote['groupe']); ?></h2>
+                <span class="text-sm font-semibold text-accent-2 tabular-nums" id="compte-vote" data-reste="<?php echo (int) $vote['reste']; ?>">--:--</span>
             </div>
-            <div>
-                <div class="flex justify-between"><span>Pita Lab</span><b>2</b></div>
-                <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3"><div class="h-full w-1/2 rounded-full bg-texte-2"></div></div>
+            <?php if (count($vote['choix']) == 0) { ?>
+                <p class="mt-3 text-sm text-texte-2">Personne n'a encore proposé de resto.</p>
+            <?php } ?>
+            <div class="mt-3 space-y-1 text-sm">
+                <?php foreach ($vote['choix'] as $j => $choix) { ?>
+                    <?php
+                    $largeur = 0;
+                    if ($vote['total'] > 0) {
+                        $largeur = round(100 * $choix['voix'] / $vote['total']);
+                    }
+                    ?>
+                    <form method="post" action="controller/accueilController.php">
+                        <input type="hidden" name="action" value="voter">
+                        <input type="hidden" name="proposition" value="<?php echo (int) $choix['id']; ?>">
+                        <button class="block w-full rounded-lg px-1 py-1 text-left hover:bg-white/5 cursor-pointer" title="Voter pour <?php echo texte($choix['nom']); ?>">
+                            <span class="flex justify-between">
+                                <span><?php echo texte($choix['nom']); ?><?php if ($choix['moi']) { echo ' <span class="text-xs text-accent-2">· ton vote</span>'; } ?></span>
+                                <b><?php echo (int) $choix['voix']; ?></b>
+                            </span>
+                            <span class="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-surface-3">
+                                <span class="block h-full rounded-full <?php if ($j == 0) { echo 'bg-accent'; } else { echo 'bg-texte-2'; } ?>" style="width:<?php echo $largeur; ?>%"></span>
+                            </span>
+                        </button>
+                    </form>
+                <?php } ?>
             </div>
-        </div>
-        <a href="index.php?page=roulette" class="mt-3.5 flex h-[38px] items-center justify-center gap-2 rounded-xl bg-alerte text-sm font-semibold text-black hover:brightness-105 transition">
-            <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3v6.6M12 14.4V21M3 12h6.6M14.4 12H21M5.6 5.6l4.7 4.7M13.7 13.7l4.7 4.7"/></svg>
-            Départager à la roulette
-        </a>
+            <?php if ($vote['nomGagnant'] != '') { ?>
+                <p class="mt-3.5 flex h-[38px] items-center justify-center rounded-xl bg-succes/15 text-sm font-semibold text-succes">On mange chez <?php echo texte($vote['nomGagnant']); ?></p>
+            <?php } elseif ($vote['egalite']) { ?>
+                <form method="post" action="controller/accueilController.php">
+                    <input type="hidden" name="action" value="departager">
+                    <button class="mt-3.5 flex h-[38px] w-full items-center justify-center gap-2 rounded-xl bg-alerte text-sm font-semibold text-black hover:brightness-105 transition cursor-pointer">
+                        <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3v6.6M12 14.4V21M3 12h6.6M14.4 12H21M5.6 5.6l4.7 4.7M13.7 13.7l4.7 4.7"/></svg>
+                        Départager à la roulette
+                    </button>
+                </form>
+            <?php } ?>
+        <?php } else { ?>
+            <h2 class="font-bold tracking-tight">Vote de groupe</h2>
+            <p class="mt-2 text-sm text-texte-2">Aucun vote en cours dans tes groupes.</p>
+            <a href="index.php?page=groupes" class="mt-3.5 flex h-[38px] items-center justify-center gap-2 rounded-xl bg-surface-2 text-sm font-semibold hover:bg-surface-3 transition-colors">Voir mes groupes</a>
+        <?php } ?>
     </div>
 </div>
+
+</div>
+
+<!-- Fenêtre : définir le budget -->
+<dialog id="fenetre-budget" class="acc-fenetre">
+    <form method="post" action="controller/accueilController.php">
+        <input type="hidden" name="action" value="budget">
+        <h2>Budget du mois</h2>
+        <p>Combien veux-tu dépenser en resto ce mois-ci ?</p>
+        <label>Montant (€)
+            <input type="text" name="montant" inputmode="decimal" required placeholder="150" value="<?php if ($budget > 0) { echo prix($budget); } ?>">
+        </label>
+        <div class="acc-btns">
+            <button type="button" data-fermer>Annuler</button>
+            <button class="ok">Enregistrer</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Fenêtre : ajouter une dépense -->
+<dialog id="fenetre-depense" class="acc-fenetre">
+    <form method="post" action="controller/accueilController.php">
+        <input type="hidden" name="action" value="depense">
+        <h2>Ajouter une dépense</h2>
+        <label>Resto
+            <input type="text" name="resto" list="restos-proches" required maxlength="100" autocomplete="off" placeholder="Choisis ou tape un nom">
+        </label>
+        <datalist id="restos-proches">
+            <?php foreach ($choixDepense as $resto) { ?>
+                <option value="<?php echo texte($resto['nom']); ?>"><?php echo $resto['min']; ?> min</option>
+            <?php } ?>
+        </datalist>
+        <label>Type
+            <select name="type">
+                <option value="">Détecter automatiquement</option>
+                <?php foreach ($typesResto as $typeResto) { ?>
+                    <option value="<?php echo texte($typeResto); ?>"><?php echo texte($typeResto); ?></option>
+                <?php } ?>
+            </select>
+        </label>
+        <label>Montant (€)
+            <input type="text" name="montant" inputmode="decimal" required placeholder="8,90">
+        </label>
+        <div class="acc-btns">
+            <button type="button" data-fermer>Annuler</button>
+            <button class="ok">Ajouter</button>
+        </div>
+    </form>
+</dialog>
+
+<?php if ($campus) { ?>
+    <script id="donnees-accueil" type="application/json"><?php echo json_encode(array('campus' => $campus, 'lieux' => $lieux), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS); ?></script>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<?php } ?>
+<script src="public/asset/js/accueil.js?v=3"></script>

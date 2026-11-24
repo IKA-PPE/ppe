@@ -1,0 +1,5 @@
+# Dossier des photos de profil : on ne sert que des images, jamais de scripts.
+Options -Indexes
+<FilesMatch "\.(php|phtml|phar|pl|py|cgi|sh)$">
+    Require all denied
+</FilesMatch>

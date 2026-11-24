@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Europe/Paris');
 
 ob_start();
 $page = isset($_GET['page']) ? $_GET['page'] : 'index';
@@ -37,6 +38,9 @@ include __DIR__ . '/view/layout/header.php';
             break;
         case 'budget':
             include __DIR__ . '/view/budget/index.php';
+            break;
+        case 'compte':
+            include __DIR__ . '/view/compte/index.php';
             break;
 
         default:

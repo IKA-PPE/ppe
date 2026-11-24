@@ -32,6 +32,7 @@ CREATE TABLE utilisateur (
     email VARCHAR(255) NOT NULL UNIQUE,
     mdp VARCHAR(255) NOT NULL,
     budget_mensuel DECIMAL(7,2) DEFAULT NULL,
+    photo VARCHAR(255) DEFAULT NULL,
     role ENUM('etudiant', 'admin') NOT NULL DEFAULT 'etudiant',
     date_inscription DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     id_etablissement INT NOT NULL,

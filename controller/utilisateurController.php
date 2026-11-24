@@ -92,6 +92,7 @@
             $_SESSION['user_email']  = $user['email'];
             $_SESSION['user_role']   = $user['role'];
             $_SESSION['user_prenom'] = $user['prenom'];
+            $_SESSION['user_photo']  = $user['photo'] ?? null;
         }
 
         // Enregistre le message d'erreur et renvoie vers la page du formulaire
